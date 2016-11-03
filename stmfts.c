@@ -44,10 +44,14 @@ int stmfts_read_event(int fd)
 	while(1) {
 		ret = read(fd, &sev.ev, sizeof(sev.ev));
 
-		if (ret < 0)
+		if (ret < 0) {
 			perror("unable to read from device");
-		if (ret != sizeof(sev.ev))
+			return -1;
+		}
+		if (ret != sizeof(sev.ev)) {
 			error(0, EIO, "unable to read properly");
+			return -1;
+		}
 
 		switch(sev.ev.type) {
 		case EV_SYN:
@@ -169,12 +173,16 @@ int main(int argc, char *argv[])
 	}
 
 	fd = stmfts_open_event(argv[1]);
-	if (fd < 0)
+	if (fd < 0) {
 		error(0, ENODEV, "input event not found");
+		return -1;
+	}
 
 	fd = stmfts_read_event(fd);
-	if (fd)
+	if (fd) {
 		fprintf(stderr, "something went wrong\n");
+		return -1;
+	}
 
 	return 0;
 }
