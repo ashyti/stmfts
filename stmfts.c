@@ -33,7 +33,7 @@ static int stmfts_select(const struct dirent *ep)
 	return 1;
 }
 
-int stmfts_read_event(fd)
+int stmfts_read_event(int fd)
 {
 	int ret;
 	struct stmfts_event sev;
