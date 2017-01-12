@@ -114,9 +114,9 @@ int stmfts_read_event(int fd)
 				sev.type = STMFTS_EV_TYPE_MT_TOUCH;
 				sev.area = sev.ev.value;
 				break;
-			/* case ABS_MT_TRACKING_ID:
+			case ABS_MT_TRACKING_ID:
 				sev.id = sev.ev.value;
-				break; */
+				break;
 			case ABS_MT_SLOT:
 				sev.type = STMFTS_EV_TYPE_MT_TOUCH;
 				slot = sev.ev.value;
