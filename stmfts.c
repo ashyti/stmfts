@@ -156,6 +156,7 @@ int stmfts_read_event(int fd)
 					"(type = %x, code = %x, value = %d)\n",
 					sev.ev.type, sev.ev.code, sev.ev.value);
 			}
+			break;
 		default:
 			fprintf(stderr, "*** unhandled event type"
 				"(type = %x, code = %x, value = %d)\n",
