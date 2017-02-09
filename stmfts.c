@@ -228,7 +228,8 @@ void stmfts_print_usage(char *argv)
 
 int main(int argc, char *argv[])
 {
-	int fd;
+	int fd, err;
+	struct input_mask mask;
 
 	if (argc != 2) {
 		error(0, EPERM, "missing event name");
@@ -239,6 +240,16 @@ int main(int argc, char *argv[])
 	fd = stmfts_open_event(argv[1]);
 	if (fd < 0) {
 		error(0, ENODEV, "input event not found");
+		return -1;
+	}
+
+	mask.type = EV_ABS;
+	mask.codes_size = 0;
+	mask.codes_ptr = 0;
+
+	err = ioctl(fd, EVIOCSMASK, &mask);
+	if (err < 0) {
+		error(0, EFAULT, "ioctl failed");
 		return -1;
 	}
 
