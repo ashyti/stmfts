@@ -7,19 +7,32 @@
 #include <string.h>
 #include <unistd.h>
 
+enum stmfts_ev_type {
+	STMFTS_EV_TYPE_MT_TOUCH,
+	STMFTS_EV_TYPE_HOVER,
+	STMFTS_EV_TYPE_KEY
+};
+
 #define STMFTS_INPUT_PATH	"/dev/input/"
 #define STMFTS_INPUT_NAME_SIZE	256
 
 struct stmfts_event {
 	struct input_event ev;
 
+	enum stmfts_ev_type type;
+
 	int id;
 	int x;
 	int y;
+	int z; /* distance, for hovering */
 	int orientation;
 	int major;
 	int minor;
 	int area;
+
+	/* key buttons */
+	int key_menu;
+	int key_back;
 };
 
 static int stmfts_select(const struct dirent *ep)
@@ -55,37 +68,70 @@ int stmfts_read_event(int fd)
 
 		switch(sev.ev.type) {
 		case EV_SYN:
-			printf("touch event: [%d] id = %d, x = %d, y = %d, "
-				"major = %d, minor = %d, orientation = %d, "
-				"area = %d\n", slot, sev.id, sev.x, sev.y,
-				sev.major, sev.minor, sev.orientation, sev.area);
+			switch (sev.type) {
+			case STMFTS_EV_TYPE_MT_TOUCH:
+				printf("touch: [%d] id = %d, x = %d, y = %d, "
+					"major = %d, minor = %d, orientation = %d, "
+					"area = %d\n", slot, sev.id, sev.x, sev.y,
+					sev.major, sev.minor, sev.orientation, sev.area);
+				break;
+			case STMFTS_EV_TYPE_HOVER:
+				printf("hover: x = %d, y = %d, z = %d\n",
+					sev.x, sev.y, sev.z);
+				break;
+			case STMFTS_EV_TYPE_KEY:
+				if (sev.key_menu < 0)
+					printf("key: back %s\n", sev.key_back ? "pressed" : "released");
+				else
+					printf("key: menu %s\n", sev.key_menu ? "pressed" : "released");
+				break;
+			}
 			memset(&sev, 0, sizeof(sev));
 			break;
 		case EV_ABS:
 			switch(sev.ev.code) {
 			case ABS_MT_POSITION_X:
+				sev.type = STMFTS_EV_TYPE_MT_TOUCH;
 				sev.x = sev.ev.value;
 				break;
 			case ABS_MT_POSITION_Y:
+				sev.type = STMFTS_EV_TYPE_MT_TOUCH;
 				sev.y = sev.ev.value;
 				break;
 			case ABS_MT_TOUCH_MAJOR:
+				sev.type = STMFTS_EV_TYPE_MT_TOUCH;
 				sev.major = sev.ev.value;
 				break;
 			case ABS_MT_TOUCH_MINOR:
+				sev.type = STMFTS_EV_TYPE_MT_TOUCH;
 				sev.minor = sev.ev.value;
 				break;
 			case ABS_MT_ORIENTATION:
+				sev.type = STMFTS_EV_TYPE_MT_TOUCH;
 				sev.orientation = sev.ev.value;
 				break;
 			case ABS_MT_PRESSURE:
+				sev.type = STMFTS_EV_TYPE_MT_TOUCH;
 				sev.area = sev.ev.value;
 				break;
 			/* case ABS_MT_TRACKING_ID:
 				sev.id = sev.ev.value;
 				break; */
 			case ABS_MT_SLOT:
+				sev.type = STMFTS_EV_TYPE_MT_TOUCH;
 				slot = sev.ev.value;
+				break;
+			case ABS_X:
+				sev.type = STMFTS_EV_TYPE_HOVER;
+				sev.x = sev.ev.value;
+				break;
+			case ABS_Y:
+				sev.type = STMFTS_EV_TYPE_HOVER;
+				sev.y = sev.ev.value;
+				break;
+			case ABS_DISTANCE:
+				sev.type = STMFTS_EV_TYPE_HOVER;
+				sev.z = sev.ev.value;
 				break;
 			default:
 				fprintf(stderr, "*** unhandled event code"
@@ -93,6 +139,23 @@ int stmfts_read_event(int fd)
 					sev.ev.type, sev.ev.code, sev.ev.value);
 			}
 			break;
+		case EV_KEY:
+			switch(sev.ev.code) {
+			case KEY_MENU:
+				sev.type = STMFTS_EV_TYPE_KEY;
+				sev.key_back = -1;
+				sev.key_menu = sev.ev.value;
+				break;
+			case KEY_BACK:
+				sev.type = STMFTS_EV_TYPE_KEY;
+				sev.key_menu = -1;
+				sev.key_back = sev.ev.value;
+				break;
+			default:
+				fprintf(stderr, "*** unhandled event code"
+					"(type = %x, code = %x, value = %d)\n",
+					sev.ev.type, sev.ev.code, sev.ev.value);
+			}
 		default:
 			fprintf(stderr, "*** unhandled event type"
 				"(type = %x, code = %x, value = %d)\n",
