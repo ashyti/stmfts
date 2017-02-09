@@ -200,12 +200,12 @@ int stmfts_open_event(char *fname)
 		}
 
 		ret = strncmp(fname, dev_name, STMFTS_INPUT_NAME_SIZE);
-		if (ret)
+		if (ret) {
+			close(fd);
 			continue;
+		}
 
 		return fd;
-
-		close(fd);
 	}
 
 	error(0, ENODEV, "input device not found");
