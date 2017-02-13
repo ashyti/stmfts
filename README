@@ -1,0 +1,22 @@
+ST Microelectronics FingerTip S stmfts driver test
+==================================================
+
+by Andi Shyti <andi.shyti@samsung.com> 
+
+Compile
+-------
+
+$ make
+
+Execute
+-------
+
+./stmfts <input dev name>
+
+where <input dev name> is the name given to the stmfts device, in our case is
+stmfts.
+
+TODO
+----
+1. remove the <input dev name> parameter
+2. add parameters for masks
